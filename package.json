@@ -1,0 +1,31 @@
+{
+  "name": "delete-residual-file-plugin",
+  "version": "1.0.0",
+  "description": "一个用于快速删除残余文件的webpack插件",
+  "main": "dist/delete-residual-file-plugin.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "rollup --config rollup.config.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Jouryjc/delete-residual-file-plugin.git"
+  },
+  "keywords": [
+    "webpack",
+    "plugin"
+  ],
+  "author": "Jour",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Jouryjc/delete-residual-file-plugin/issues"
+  },
+  "homepage": "https://github.com/Jouryjc/delete-residual-file-plugin#readme",
+  "devDependencies": {
+    "@babel/core": "^7.7.5",
+    "@babel/preset-env": "^7.7.6",
+    "glob": "^7.1.6",
+    "rollup": "^1.27.9",
+    "rollup-plugin-babel": "^4.3.3"
+  }
+}
