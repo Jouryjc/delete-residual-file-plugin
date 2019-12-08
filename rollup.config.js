@@ -6,7 +6,8 @@ export default {
     output: {
         file: 'dist/delete-residual-file-plugin.js',
         format: 'es',
-        name: 'DeleteResidualFilePlugin'
+        name: 'DeleteResidualFilePlugin',
+        sourcemap: 'inline'
     },
 
     plugins: [

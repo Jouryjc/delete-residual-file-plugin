@@ -88,6 +88,7 @@ module.exports = {
 };
 ```
 
-## 关键词
-[webpack](https://webpack.js.org/)
-[plugins](https://webpack.js.org/concepts/plugins/)
+## TODO
+1. 使用 `jest` 补充单元测试
+2. 使用 `lint-staged` 完善提交规范
+3. 深入学习 `rollup` 打包配置（区分开发和发布环境）
