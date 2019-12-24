@@ -4,10 +4,10 @@
   "description": "一个用于快速删除残余文件的webpack插件",
   "main": "dist/delete-residual-file-plugin.js",
   "scripts": {
-    "test": "jest ./test/index.spec.js",
-    "build": "rollup --config rollup.config.js",
+    "test": "jest",
+    "build:plugin": "rollup --config rollup.config.js",
     "release": "np",
-    "webpack": "node ./node_modules/webpack/bin/webpack.js --config ./example/webpack.config.js"
+    "build": "node ./node_modules/webpack/bin/webpack.js --config ./example/webpack.config.js"
   },
   "repository": {
     "type": "git",
@@ -34,7 +34,11 @@
     "np": "^5.2.1",
     "rollup": "^1.27.9",
     "rollup-plugin-babel": "^4.3.3",
+    "shelljs": "^0.8.3",
     "webpack": "^4.41.2",
     "webpack-cli": "^3.3.10"
+  },
+  "dependencies": {
+    "temp-sandbox": "^3.0.0"
   }
 }

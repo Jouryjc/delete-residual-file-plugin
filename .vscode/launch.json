@@ -8,15 +8,12 @@
             "type": "node",
             "request": "launch",
             "name": "jest",
-            "program": "${workspaceRoot}/node_modules/jest/bin/jest.js",
-            "args": [
-                "./test/index.spec.js"
-            ]
+            "program": "${workspaceRoot}/node_modules/jest/bin/jest.js"
         },
         {
             "type": "node",
             "request": "launch",
-            "name": "webpack",
+            "name": "build",
             "program": "${workspaceRoot}/node_modules/webpack/bin/webpack.js",
             "args": [
                 "--config",

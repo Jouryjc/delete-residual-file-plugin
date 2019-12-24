@@ -1,59 +1,51 @@
 const path = require('path');
 const fs = require('fs');
+const TempSandbox = require('temp-sandbox');
 const DeleteResidualFilePlugin = require('../src/delete-residual-file-plugin.js');
-const webpackConfig = require('../example/webpack.config.js');
+const util = require('./util');
 
-function webpack(options = {}) {
-    const webpackActual = require('webpack');
+let sandbox = new TempSandbox({ randomDir: true });
+beforeEach(async () => {
+    await sandbox.clean();
+    sandbox.cleanSync();
+});
+ 
+afterAll(async () => {
+    await sandbox.destroySandbox();
+    sandbox.destroySandboxSync();
+});
 
-    // https://webpack.js.org/concepts/mode/
-    if (
-        options.mode === undefined &&
-        options.mode !== null &&
-        webpackMajor !== null &&
-        webpackMajor >= 4
-    ) {
-        // eslint-disable-next-line no-param-reassign
-        options.mode = 'development';
-    }
+describe('plugin functional', () => {
+    const sandboxExample = sandbox.createFileSync(
+        path.resolve(__dirname, '../example/src')
+    );
 
-    if (options.mode === null) {
-        // eslint-disable-next-line no-param-reassign
-        delete options.mode;
-    }
+    const config = {
+        root: path.resolve(__dirname, '../example/src')
+    };
 
-    const compiler = webpackActual(options);
+    // 默认参数
+    test('required and default parameters', () => {
+        const plugin = new DeleteResidualFilePlugin();
+        const params = plugin.options;
 
-    const runAsync = () =>
-        new Promise((resolve, reject) => {
-            compiler.run((error, stats) => {
-                if (error || stats.hasErrors()) {
-                    reject(error);
+        expect(params.root).toBe('./src');
+        expect(params.clean).toBeFalsy();
+        expect(params.backupList).toBe('./residual-files.json');
+        expect(params.exclude).toStrictEqual([]);
+        expect(params.backupDir).toBe('');
+    });
 
-                    return;
-                }
-
-                resolve(stats);
-            });
-        });
-
-    return { ...compiler, run: runAsync };
-}
-
-describe('config', () => {
-    test('functional', async () => {
+    // 备份文件列表
+    test('backupList', async () => {
         const backupList = path.resolve(__dirname, '../example/residual-list.json');
-        const root = path.resolve(__dirname, '../example/src');
+        const plugin = new DeleteResidualFilePlugin(
+            Object.assign(config, {
+                backupList
+            })
+        );
 
-        const plugin = new DeleteResidualFilePlugin({
-            root: root,
-            clean: false,
-            backupList: backupList,
-            exclude: [],
-            backupDir: ''
-        });
-
-        const compiler = webpack(Object.assign(webpackConfig, { 
+        const compiler = util.webpack(Object.assign(webpackConfig, { 
             plugins: [
                 plugin
             ]
@@ -61,9 +53,32 @@ describe('config', () => {
 
         await compiler.run();
         
-        // 在src下存在residual-list.json文件，并且正确记录多余文件
-        // 没有清除多余文件
         expect(fs.existsSync(backupList)).toBeTruthy();
         expect(fs.readFileSync(backupList, 'utf-8')).toMatchSnapshot();
     });
+
+    // 备份目录功能
+    test('backupDir', async () => {});
+
+    test('exclude', async () => {
+        const exclude = ['directoryC'];
+        const plugin = new DeleteResidualFilePlugin(
+            Object.assign(config, {
+                exclude
+            })
+        );
+
+        const compiler = util.webpack(Object.assign(webpackConfig, { 
+            plugins: [
+                plugin
+            ]
+        }));
+
+        await compiler.run();
+
+        expect(fs.readFileSync(backupList, 'utf-8')).toMatchSnapshot();
+
+    });
+
+    test('clean', async () => {});
 });

@@ -5,18 +5,49 @@ const { spawn } = require('child_process');
 
 module.exports = class DeleteResidualFilePlugin {
     constructor(options) {
-        this.options = options;
+        this.options = Object.assign({
+
+            // 扫描的根目录
+            root: './src',
+
+            // 是否清除所有的文件
+            clean: false,
+
+            // 写入备份列表的文件路径
+            backupList: './residual-files.json',
+
+            // 要排除删除的相对目录或文件
+            exclude: [],
+
+            // 写入备份文件的路径
+            backupDir: ''
+        }, options);
     }
 
     apply(compiler) {
-        compiler.hooks.afterEmit.tap("DeleteResidualFilePlugin", (compilation) => {
-            this.findUnusedFiles(compilation, this.options);
+        compiler.hooks.afterEmit.tap("DeleteResidualFilePlugin", async (compilation) => {
+            await this.findUnusedFiles(compilation);
+
+            // 将删除的文件列表写入指定文件
+            if (this.options.backupList) {
+                this.inputBackupList();
+            }
+
+            // 备份功能
+            if (this.options.backupDir) {
+                this.outputBackupDir();
+            }
+
+            // 清除文件
+            if (this.options.clean) {
+                this.removeFile();
+            }
         });
     }
 
     /**
      * 获取依赖的文件
-     * @param {Object} - compilation对象
+     * @param {Compilation} - compilation对象
      */
     getDependFiles(compilation) {
         return new Promise((resolve, reject) => {
@@ -38,23 +69,11 @@ module.exports = class DeleteResidualFilePlugin {
     }
 
     /**
-     * 查找、备份、删除所有未使用的文件
-     * @param {Object} compilation
-     * @param {Object} config - 配置信息
-     * @param {string} config.root - 查找的根目录
-     * @param {boolean} config.clean - 是否清除所有的文件
-     * @param {string} config.backupList - 写入备份列表的路径
-     * @param {string} config.backupDir - 写入备份文件的路径
-     * @param {Array} config.exclude - 要排除删除的相对目录或文件
+     * 查找所有未使用的文件
+     * @param {Compilation} compilation 
      */
-    async findUnusedFiles(compilation, config = {}) {
-        const {
-            root = './src',
-            clean = false,
-            backupList = './residual-files.json',
-            exclude = [],
-            backupDir = ''
-        } = config;
+    async findUnusedFiles(compilation) {
+        const { root, exclude } = this.options;
 
         try {
 
@@ -77,51 +96,9 @@ module.exports = class DeleteResidualFilePlugin {
                     unUsed = unUsed.filter(fileName => !fileName.includes(excludePath));
                 });
             }
-
-            // 将删除的文件列表写入指定文件
-            if (typeof backupList === 'string') {
-                fs.writeFileSync(backupList, JSON.stringify(unUsed, null, 4), {
-                    encoding: 'utf-8'
-                });
-            }
-
-            // 备份功能
-            if (backupDir) {
-                if (!fs.existsSync(backupDir)) {
-                    fs.mkdirSync(backupDir);
-                }
-
-                unUsed.forEach(file => {
-                    const relativePos = path.relative(root, file);
-                    const dest = path.join(backupDir, relativePos);
-                    const parseDestDir = (path.parse(dest) || {}).dir;
-
-                    if (fs.existsSync(parseDestDir)) {
-                        fs.createReadStream(file).pipe(fs.createWriteStream(dest));
-                        return;
-                    }
-
-                    fs.mkdir(parseDestDir, {
-                        recursive: true
-                    }, (error) => {
-                        if (error) {
-                            throw error;
-                        }
-
-                        fs.createReadStream(file).pipe(fs.createWriteStream(dest));
-                    });
-                });
-            }
-
-            // 清除文件
-            if (clean) {
-                unUsed.forEach(file => {
-                    spawn('rm', [file]);
-                });
-            }
+            this.unUsedFile = unUsed;
 
             return unUsed;
-
         } catch (err) {
             throw new Error(err);
         }
@@ -144,6 +121,62 @@ module.exports = class DeleteResidualFilePlugin {
                 const out = files.map(item => path.resolve(process.cwd(), item));
                 resolve(out);
             });
+        });
+    }
+
+    /**
+     * 写入备份文件列表
+     */
+    inputBackupList () {
+        fs.writeFileSync(
+            this.options.backupList,
+            JSON.stringify(this.unUsedFile, null, 4),
+            {
+                encoding: 'utf-8'
+            }
+        );
+    }
+
+    /**
+     * 备份文件
+     */
+    outputBackupDir () {
+        const { root, backupDir } = this.options;
+
+        if (!fs.existsSync(backupDir)) {
+            fs.mkdirSync(backupDir);
+        }
+
+        this.unUsedFile.forEach(file => {
+            const relativePos = path.relative(root, file);
+            const dest = path.join(backupDir, relativePos);
+            const parseDestDir = (path.parse(dest) || {}).dir;
+
+            if (fs.existsSync(parseDestDir)) {
+                fs.createReadStream(file).pipe(fs.createWriteStream(dest));
+                return;
+            }
+
+            fs.mkdir(parseDestDir, {
+                recursive: true
+            }, (error) => {
+                if (error) {
+                    throw error;
+                }
+
+                fs.createReadStream(file).pipe(fs.createWriteStream(dest));
+            });
+        });
+    }
+
+    /**
+     * 移除文件
+     */
+    removeFile () {
+        this.unUsedFile.forEach(file => {
+            spawn('rm', [file]);
+
+            // TODO 如果文件夹为空了，删除对应的文件夹
         });
     }
 };

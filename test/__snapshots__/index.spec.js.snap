@@ -1,0 +1,8 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`plugin functional backupList 1`] = `
+"[
+    \\"D:\\\\\\\\delete-residual-file-plugin\\\\\\\\example\\\\\\\\src\\\\\\\\directoryB\\\\\\\\index.js\\",
+    \\"D:\\\\\\\\delete-residual-file-plugin\\\\\\\\example\\\\\\\\src\\\\\\\\directoryC\\\\\\\\c.js\\"
+]"
+`;
